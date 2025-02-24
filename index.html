@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather to Costo Degrees</title>
+    <script>
+        async function getWeather() {
+            const zipCode = document.getElementById('zipCode').value;
+
+            // Step 1: Get coordinates (latitude, longitude) for the provided zip code
+            const zipApiUrl = `https://public.opendatasoft.com/api/records/1.0/search/?dataset=us-zip-code-latitude-and-longitude&q=${zipCode}`;
+            
+            try {
+                const zipResponse = await fetch(zipApiUrl);
+                const zipData = await zipResponse.json();
+
+                if (zipData.records.length === 0) {
+                    document.getElementById('result').textContent = 'Invalid zip code.';
+                    return;
+                }
+
+                const lat = zipData.records[0].fields.latitude;
+                const lon = zipData.records[0].fields.longitude;
+
+                // Step 2: Use coordinates to get NOAA weather data
+                const noaaApiUrl = `https://api.weather.gov/points/${lat},${lon}`;
+
+                const noaaResponse = await fetch(noaaApiUrl);
+                const noaaData = await noaaResponse.json();
+
+                // Step 3: Use the gridpoint office and grid X,Y to get forecast data
+                const forecastUrl = noaaData.properties.forecast;
+                const forecastResponse = await fetch(forecastUrl);
+                const forecastData = await forecastResponse.json();
+
+                // Get the current temperature in Fahrenheit
+                const temperatureFahrenheit = forecastData.properties.periods[0].temperature;
+
+                // Convert to Costo degrees
+                const costoDegrees = temperatureFahrenheit * -1 * 56.732;
+
+                document.getElementById('result').textContent = `The temperature in Costo degrees is: ${costoDegrees.toFixed(2)}°`;
+            } catch (error) {
+                document.getElementById('result').textContent = 'An error occurred while fetching the data.';
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Weather to Costo Degrees</h1>
+    <p>Enter your zip code to get the temperature in Costo degrees.</p>
+    <input type="text" id="zipCode" placeholder="Enter zip code">
+    <button onclick="getWeather()">Get Temperature</button>
+    <p id="result"></p>
+</body>
+</html>
